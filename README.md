@@ -1,73 +1,58 @@
-# Composer's Bench
+# Composer's Bench — installable app (PWA)
 
-A browser-based piano composition studio: playable keyboard, diatonic + color chords,
-progression builder, melody + bassline, timeline with drag-positioning, drums, multiple
-instrument voices, and MIDI export.
+This is your app packaged as a **Progressive Web App**: it can be installed to a phone's
+home screen, opens full-screen like a native app, and works offline.
 
-This is a **static site** — just HTML + JavaScript. No build step, no server needed.
+## Files (put ALL of them in your repo, same folder)
 
-## Files
+- `index.html` — the app (with manifest + service worker hooks)
+- `manifest.webmanifest` — app name, colours, icons
+- `sw.js` — service worker (offline caching)
+- `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` — app icons
+- `apple-touch-icon.png` — iOS home-screen icon
 
-- `index.html` — the page
-- `app.js` — the whole app bundled into one file (React, Tone.js, and the app)
+Keep them all in the **same directory** and use the filenames as-is.
 
 ## Deploy to GitHub Pages
 
-1. Create a new repository on GitHub (e.g. `composers-bench`).
-2. Add `index.html` and `app.js` to the repo (drag them into the web uploader, or commit and push).
-3. In the repo, go to **Settings → Pages**.
-4. Under **Build and deployment**, set **Source** to **Deploy from a branch**, pick your
-   branch (usually `main`) and the `/root` folder, then **Save**.
-5. Wait ~1 minute. Your app is live at `https://<your-username>.github.io/<repo-name>/`.
+1. Commit all the files above to your repo (root, or a folder — just keep them together).
+2. **Settings → Pages → Deploy from a branch → `main` / `/root` → Save.**
+3. Open `https://<you>.github.io/<repo>/` on your phone.
 
-That's it. Open the page, click a key, and the **Grand piano** voice will load real
-recorded samples automatically (see below).
+A service worker only runs over **https** (GitHub Pages is https), so installation and
+offline work once it's hosted — not from a local `file://` open.
 
-### Test locally first (optional)
+## Install it
 
-Because the app fetches audio samples, open it through a local server rather than
-double-clicking the file:
+- **Android (Chrome/Samsung Internet):** open the site, then menu → **Add to Home screen**
+  / **Install app**. You may also get an automatic install prompt.
+- **iPhone (Safari):** open the site, tap **Share → Add to Home Screen**.
 
-```bash
-# from this folder
-python3 -m http.server 8000
-# then visit http://localhost:8000
-```
+It launches full-screen with the piano icon, no browser chrome.
 
-## Real piano samples
+## Offline behaviour
 
-The **Grand piano** voice loads the free **Salamander Grand** samples from
-`https://tonejs.github.io/audio/salamander/`. Once the app is hosted (or run from a
-local server), the browser can fetch them and the sound upgrades from the synthesized
-piano to the real recorded one. The status line under the title shows
-"♪ Grand piano (sampled)" when it's active.
+- The **app itself works offline** immediately after the first visit — the service worker
+  caches the app shell. All music features (keyboard, chords, timeline, drums, synth
+  voices, MIDI/MusicXML import & export) run with no network.
+- The **real piano samples** are cached the first time they load while online; after that
+  the sampled Grand piano works offline too. (Until then, offline sessions use the
+  synthesized piano, which needs no download.)
 
-### Use your own samples (optional, for offline / full control)
+### Want the samples available before the first online load?
 
-1. Download a sample set (e.g. the Salamander Grand, or the `samples/piano` folder from
-   the `tonejs-instruments` project). You need files named by pitch, e.g.
-   `A4.mp3`, `C4.mp3`, `Ds4.mp3`, `Fs4.mp3` …
-2. Put them in a `samples/` folder next to `index.html` and commit them.
-3. In the app, open the **About** tab, and under **Real piano samples** paste your
-   folder's URL (for a same-repo folder that's just `samples/`) and press **Load**.
+Download a piano sample set (e.g. Salamander Grand, or `tonejs-instruments`) into a
+`samples/` folder in the repo, then in the app's **About → Real piano samples** field
+enter `samples/` and press Load. The service worker will cache those too.
 
-Bundling samples this way makes the app work offline and independent of any outside site.
+## Updating the app
+
+When you replace `index.html` with a new build, bump the cache name in `sw.js`
+(`composers-bench-v1` → `-v2`) and commit both. The service worker will fetch the new
+version and drop the old cache on next load.
 
 ## About the AI features
 
-Four features use Anthropic's API: the mentor chat, progression **Critique** and
-**✦ Rewrite**, and **Suggest a bassline**. These need a server to hold your API key —
-a static site can't (a key in client-side code would be public and would be blocked by
-the browser anyway). On a plain GitHub Pages deploy these buttons will simply show a
-"couldn't reach the mentor" message; **everything else works fully client-side.**
-
-To enable them you'd add a small backend proxy (e.g. a serverless function) that holds
-your key and forwards requests to `https://api.anthropic.com/v1/messages`, then point the
-app's fetch at that proxy. Happy to help wire that up if you want it.
-
-## What works with no server
-
-Keyboard, scales, diatonic + color chords, progression builder, per-chord octave/length/feel,
-melody, timeline drag-positioning + rests, tempo (incl. separate chord/melody tempo),
-drums, instrument voices, real piano samples, and **MIDI export** — all run entirely in
-the browser.
+The mentor chat, Critique, Rewrite, and Suggest-a-bassline need a server to hold an API
+key, so they don't run on a plain static/PWA deploy — everything else does. Ask if you
+want the small backend proxy that enables them.
